@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RADIOLOGY PARTY - L'AQUILA</title>
+    <style>
+        :root { --accent: #00d4ff; --gold: #ffc439; --dark: #0f172a; }
+        
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: var(--dark); 
+            background-image: url('sfondo.jpg');
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-position: center top;
+            background-size: cover; 
+            color: white; 
+            margin: 0; padding: 0; overflow-x: hidden; 
+        }
+
+        .wrapper { 
+            display: flex; flex-direction: column; align-items: center; 
+            padding: 40px 20px; box-sizing: border-box; min-height: 100vh; 
+            background: linear-gradient(to bottom, rgba(15,23,42,0.2) 0%, rgba(15,23,42,0.8) 400px, var(--dark) 100%);
+        }
+
+        .hero h1 { 
+            font-size: 2.8rem; font-weight: 900; text-transform: uppercase; letter-spacing: 3px; text-align: center;
+            background: linear-gradient(to right, #ffffff, var(--accent), #ffffff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px rgba(0,0,0,0.9));
+            margin-bottom: 10px;
+        }
+
+        .carousel-container {
+            width: 100%; max-width: 450px; margin: 0 auto 30px auto;
+            overflow: hidden; border-radius: 20px; position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .carousel-track { display: flex; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        .carousel-slide { min-width: 100%; height: 250px; object-fit: cover; cursor: zoom-in; transition: opacity 0.3s; }
+
+        #no-event-box {
+            display: none; text-align: center; padding: 40px 20px;
+            background: rgba(30, 41, 59, 0.6); border-radius: 25px;
+            border: 1px dashed var(--accent); margin-bottom: 30px; width: 100%; max-width: 450px;
+            backdrop-filter: blur(10px);
+        }
+
+        #lightbox { display: none; position: fixed; z-index: 2000; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(5px); align-items: center; justify-content: center; cursor: zoom-out; }
+        #lightbox img { max-width: 90%; max-height: 80%; border-radius: 10px; transform: scale(0.8); transition: transform 0.3s ease; }
+        #lightbox.active img { transform: scale(1); }
+
+        .countdown, .info-item, .card, .faq-item, .overlay-card {
+            background: rgba(30, 41, 59, 0.75) !important; 
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6) !important;
+            border-radius: 25px;
+        }
+
+        .countdown { display: flex; justify-content: center; gap: 15px; padding: 20px 30px; margin-bottom: 30px; }
+        .count-item div { font-size: 2rem; font-weight: 900; color: var(--accent); }
+        .count-item span { font-size: 0.6rem; text-transform: uppercase; color: #cbd5e1; }
+
+        .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 30px; width: 100%; max-width: 500px; }
+        .info-item { padding: 15px; text-align: center; text-decoration: none; color: inherit; display: block; transition: 0.3s; }
+        .info-item i { display: block; font-size: 1.4rem; margin-bottom: 5px; }
+        .info-item p { margin: 0; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; }
+
+        /* Effetto hover per la card Location cliccabile */
+        #location-link:hover { background: rgba(0, 212, 255, 0.2) !important; transform: translateY(-3px); }
+
+        .card { padding: 30px 20px; width: 100%; max-width: 450px; text-align: center; box-sizing: border-box; margin-bottom: 30px;}
+        input { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(15, 23, 42, 0.8); color: white; text-align: center; box-sizing: border-box; transition: 0.3s; }
+        input.error { border-color: #ff4757; box-shadow: 0 0 10px rgba(255, 71, 87, 0.3); }
+        
+        .btn { display: block; width: 100%; padding: 18px; border-radius: 12px; border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
+        .btn-paypal { background: var(--gold); color: #000; }
+        .btn-iban { background: #2dd4bf; color: #000; margin-top: 10px; }
+
+        .faq-container { width: 100%; max-width: 450px; margin-top: 20px; }
+        .faq-item { margin-bottom: 12px; padding: 18px; cursor: pointer; }
+        .faq-question { font-weight: bold; font-size: 0.9rem; color: var(--accent); display: flex; justify-content: space-between; align-items: center; }
+        .faq-answer { display: none; margin-top: 12px; font-size: 0.85rem; color: #cbd5e1; line-height: 1.5; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; }
+
+        .btn-contatti { background: none; border: 1px solid rgba(255,255,255,0.2); color: #94a3b8; padding: 10px 20px; border-radius: 50px; cursor: pointer; margin-top: 30px; font-size: 0.8rem; }
+
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+        .overlay-card { padding: 40px 30px; text-align: center; max-width: 400px; width: 100%; }
+
+        .signature {
+            position: fixed; bottom: 10px; right: 15px;
+            font-size: 0.65rem; color: rgba(255,255,255,0.3);
+            letter-spacing: 1px; text-transform: uppercase; z-index: 100;
+        }
+        .signature span { color: var(--accent); font-weight: bold; opacity: 0.6; }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; text-shadow: 0 0 10px var(--accent); }
+            100% { opacity: 0.6; }
+        }
+        #no-event-box strong { animation: pulse 2s infinite; }
+    </style>
+</head>
+<body>
+
+<div id="lightbox" onclick="closeZoom()"><img id="lightbox-img" src="" alt="Zoom"></div>
+
+<div class="wrapper">
+    <div class="hero">
+        <h1 id="titolo">RADIOLOGY PARTY</h1>
+        <div id="countdown" class="countdown">
+            <div class="count-item"><div id="days">00</div><span>Giorni</span></div>
+            <div class="count-item"><div id="hours">00</div><span>Ore</span></div>
+            <div class="count-item"><div id="minutes">00</div><span>Min</span></div>
+            <div class="count-item"><div id="seconds">00</div><span>Sec</span></div>
+        </div>
+    </div>
+
+    <div class="carousel-container">
+        <div class="carousel-track" id="carousel-track">
+            <img src="foto1.jpg" class="carousel-slide" onclick="openZoom(this.src)">
+            <img src="foto2.jpg" class="carousel-slide" onclick="openZoom(this.src)">
+            <img src="foto3.jpg" class="carousel-slide" onclick="openZoom(this.src)">
+        </div>
+    </div>
+
+    <div class="info-grid">
+        <div class="info-item"><i>🍸</i><p id="info-drink">DRINK</p></div>
+        <div class="info-item"><i>🍕</i><p id="info-cibo">BUFFET</p></div>
+        <div class="info-item"><i>🎧</i><p id="info-musica">DJ SET</p></div>
+        <a id="location-link" class="info-item" target="_blank"><i>📍</i><p id="info-pos">LOCATION</p></a>
+    </div>
+
+    <div id="no-event-box">
+        <h2 style="color: var(--gold); margin-top:0;">🕺 RECOVERY MODE: ON</h2>
+        <p style="font-size: 1.1rem; line-height: 1.6;">
+            Ci stiamo ancora riprendendo dall'ultima festa... <br>
+            Ma non per molto! 🧨<br><br>
+            Torna a trovarci tra qualche giorno per scoprire la prossima data e prenotare il tuo posto.<br><br>
+            <strong style="color: var(--accent);">STAY RADIOLOGY! ☢️</strong>
+        </p>
+    </div>
+
+    <div class="card" id="form-container">
+        <div id="modulo-prenotazione">
+            <h3 style="margin-top:0; color: var(--accent);">REGISTRAZIONE</h3>
+            <input type="text" id="nome-collega" placeholder="NOME E COGNOME">
+            <input type="email" id="email-collega" placeholder="EMAIL">
+            <div id="shuttle-box" style="display:none; margin: 15px 0;">
+                <label style="cursor:pointer; font-size: 0.85rem;">
+                    <input type="checkbox" id="shuttle-check" onchange="aggiornaTotale()"> 
+                    NAVETTA A/R (+<span id="prezzo-shuttle"></span>€)
+                </label>
+            </div>
+            <p style="font-size: 1.8rem; font-weight: 900; margin: 15px 0;">TOTALE: <span id="totale">0</span>€</p>
+            <button onclick="confermaEPaga('PAYPAL')" class="btn btn-paypal">Paga con PayPal</button>
+            <button onclick="confermaEPaga('IBAN')" class="btn btn-iban">Paga con Bonifico</button>
+        </div>
+    </div>
+
+    <div class="faq-container" id="faq-list"></div>
+    <button class="btn-contatti" onclick="apriOverlay('contattiOverlay')">Problemi? Contatti</button>
+</div>
+
+<div class="signature">Created by <span>Luca Rescigno</span></div>
+
+<div id="ibanOverlay" class="overlay" onclick="chiudiOverlay('ibanOverlay')">
+    <div class="overlay-card" onclick="event.stopPropagation()">
+        <h3 style="color: var(--accent); margin-top: 0;">COORDINATE BONIFICO</h3>
+        <p style="font-size: 0.8rem; color: #cbd5e1;">Beneficiario:</p>
+        <p id="iban-beneficiario" style="font-weight: 900; margin-bottom: 20px; font-size: 1.1rem;"></p>
+        <p style="font-size: 0.8rem; color: #cbd5e1;">IBAN:</p>
+        <p id="iban-codice" style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; font-family: monospace; border: 1px dashed var(--accent); word-break: break-all;"></p>
+        <p id="iban-causale" style="font-size: 0.75rem; margin-top: 15px; color: var(--gold);"></p>
+        <button onclick="chiudiOverlay('ibanOverlay')" class="btn" style="background: white; color: black; margin-top: 25px; padding: 12px; font-size: 0.8rem;">CHIUDI</button>
+    </div>
+</div>
+
+<div id="contattiOverlay" class="overlay" onclick="chiudiOverlay('contattiOverlay')">
+    <div class="overlay-card" onclick="event.stopPropagation()">
+        <h3 style="color: var(--accent); margin-top: 0;">CONTATTACI</h3>
+        <p style="font-size: 0.9rem; margin-bottom: 10px; color: #cbd5e1;">Per info o problemi con il pagamento:</p>
+        <div style="margin: 20px 0;">
+            <p id="org-1" style="font-weight: bold; margin: 5px 0;"></p>
+            <p id="org-2" style="font-weight: bold; margin: 5px 0;"></p>
+            <p id="org-3" style="font-weight: bold; margin: 5px 0;"></p>
+        </div>
+        <button onclick="chiudiOverlay('contattiOverlay')" class="btn" style="background: white; color: black; padding: 12px; font-size: 0.8rem;">CHIUDI</button>
+    </div>
+</div>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxCWV5e0YD7a8G33LVmCSl-E33yMkwAK7f3aYYkadxA3QyySX31HdB3H0O96tI3Ytw0/exec";
+
+    let currentSlide = 0;
+    function moveCarousel() {
+        const track = document.getElementById('carousel-track');
+        const slides = document.querySelectorAll('.carousel-slide');
+        if(slides.length <= 1) return;
+        currentSlide = (currentSlide + 1) % slides.length;
+        track.style.transform = `translateX(-${currentSlide * 100}%)`;
+    }
+    setInterval(moveCarousel, 4000);
+
+    function openZoom(src) {
+        const lb = document.getElementById('lightbox');
+        document.getElementById('lightbox-img').src = src;
+        lb.style.display = 'flex';
+        setTimeout(() => lb.classList.add('active'), 10);
+    }
+    function closeZoom() {
+        const lb = document.getElementById('lightbox');
+        lb.classList.remove('active');
+        setTimeout(() => lb.style.display = 'none', 300);
+    }
+
+    async function inizializza() {
+        try {
+            const response = await fetch(SCRIPT_URL);
+            const ev = await response.json();
+            
+            if (!ev.titolo || ev.titolo === "") throw new Error("Evento vuoto");
+
+            document.getElementById('titolo').innerText = ev.titolo;
+            
+            // --- GESTIONE ROBUSTA LINK MAPPA ---
+            const locLink = document.getElementById('location-link');
+            if(ev.mappa_url && ev.mappa_url.trim() !== "") {
+                let url = ev.mappa_url.trim();
+                if (!url.startsWith('http')) { url = 'https://' + url; }
+                
+                locLink.href = url;
+                locLink.style.cursor = "pointer";
+                // Forza l'apertura pulita in nuova scheda
+                locLink.onclick = function(e) {
+                    window.open(url, '_blank');
+                    return false;
+                };
+            } else {
+                locLink.removeAttribute('href');
+                locLink.style.cursor = "default";
+                locLink.onclick = null;
+            }
+
+            document.getElementById('info-drink').innerText = ev.info_drink || "DA DEFINIRE";
+            document.getElementById('info-cibo').innerText = ev.info_cibo || "DA DEFINIRE";
+            document.getElementById('info-musica').innerText = ev.info_musica || "DA DEFINIRE";
+            document.getElementById('info-pos').innerText = ev.info_pos || "DA DEFINIRE";
+            
+            document.getElementById('iban-beneficiario').innerText = ev.beneficiario || "DA DEFINIRE";
+            document.getElementById('iban-codice').innerText = ev.iban_codice || "DA DEFINIRE";
+            document.getElementById('iban-causale').innerText = "Causale: " + (ev.iban_causale || "Nome e Cognome");
+
+            document.getElementById('org-1').innerText = "👤 " + (ev.org_1 || "Luca Rescigno");
+            document.getElementById('org-2').innerText = "👤 " + (ev.org_2 || "Staff Radiology");
+            document.getElementById('org-3').innerText = ev.org_3 ? "👤 " + ev.org_3 : "";
+
+            window.basePrice = ev.prezzo_base;
+            window.shuttlePrice = ev.prezzo_navetta;
+            window.paypalUser = ev.paypal_user;
+
+            if(ev.navetta_disponibile === true || ev.navetta_disponibile === "TRUE"){
+                document.getElementById('shuttle-box').style.display = 'block';
+                document.getElementById('prezzo-shuttle').innerText = ev.prezzo_navetta;
+            }
+            
+            startCountdown(ev.data);
+            caricaFaq();
+            aggiornaTotale();
+        } catch(e){ 
+            console.log("Errore o Recovery Mode attivo.");
+            document.getElementById('form-container').style.display = 'none';
+            document.getElementById('countdown').style.display = 'none';
+            document.getElementById('no-event-box').style.display = 'block';
+            document.getElementById('titolo').innerText = "RADIOLOGY PARTY";
+        }
+    }
+
+    function caricaFaq() {
+        const faqData = [
+            { q: "Posso portare un amico?", a: "Sì, ma ricordati di registrarlo su questo sito per inserirlo in lista!" },
+            { q: "Posso disdire la prenotazione?", a: "Sì, ricordati di farlo entro le 48 ore prima della festa contattandoci direttamente." },
+            { q: "Come ricevo la conferma del pagamento?", a: "Una volta effettuato il pagamento, lo staff verificherà l'accredito e riceverai una mail di conferma ufficiale." },
+            { q: "Cosa devo mostrare all'ingresso?", a: "Basterà comunicare il tuo nome e cognome: lo staff verificherà la presenza nella lista dei pagamenti confermati." }
+        ];
+        const container = document.getElementById('faq-list');
+        container.innerHTML = "";
+        faqData.forEach(f => {
+            const div = document.createElement('div');
+            div.className = 'faq-item';
+            div.onclick = function() {
+                const ans = this.querySelector('.faq-answer');
+                ans.style.display = (ans.style.display === 'block') ? 'none' : 'block';
+            };
+            div.innerHTML = `<div class="faq-question"><span>${f.q}</span> <span>+</span></div><div class="faq-answer">${f.a}</div>`;
+            container.appendChild(div);
+        });
+    }
+
+    function startCountdown(d){
+        const target = new Date(d.replace(' ','T')).getTime();
+        const interval = setInterval(() => {
+            const now = new Date().getTime();
+            const diff = target - now;
+            if(diff > 0){
+                document.getElementById('days').innerText = String(Math.floor(diff/86400000)).padStart(2,'0');
+                document.getElementById('hours').innerText = String(Math.floor((diff%86400000)/3600000)).padStart(2,'0');
+                document.getElementById('minutes').innerText = String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
+                document.getElementById('seconds').innerText = String(Math.floor((diff%60000)/1000)).padStart(2,'0');
+            } else {
+                clearInterval(interval);
+                document.getElementById('countdown').style.display = 'none';
+            }
+        }, 1000);
+    }
+
+    function aggiornaTotale(){
+        const hasShuttle = document.getElementById('shuttle-check').checked;
+        document.getElementById('totale').innerText = (window.basePrice || 0) + (hasShuttle ? (window.shuttlePrice || 0) : 0);
+    }
+
+    function apriOverlay(id) { document.getElementById(id).style.display = 'flex'; }
+    function chiudiOverlay(id) { document.getElementById(id).style.display = 'none'; }
+
+    async function confermaEPaga(metodo) {
+        const nomeIn = document.getElementById('nome-collega');
+        const emailIn = document.getElementById('email-collega');
+        
+        nomeIn.classList.remove('error');
+        emailIn.classList.remove('error');
+
+        let valid = true;
+        if(nomeIn.value.trim().length < 5) { nomeIn.classList.add('error'); valid = false; }
+        if(!emailIn.value.includes('@')) { emailIn.classList.add('error'); valid = false; }
+
+        if(!valid) {
+            return alert("Inserisci Nome completo ed Email valida prima di vedere le coordinate!");
+        }
+
+        const btnOriginale = event.target;
+        const testoOriginale = btnOriginale.innerText;
+        btnOriginale.innerText = "REGISTRAZIONE...";
+        btnOriginale.disabled = true;
+
+        try {
+            await fetch(SCRIPT_URL, {
+                method: "POST",
+                mode: 'no-cors',
+                body: JSON.stringify({
+                    action: "nuovaIscrizione",
+                    nome: nomeIn.value.trim().toUpperCase(),
+                    email: emailIn.value.trim(),
+                    navetta: document.getElementById('shuttle-check').checked,
+                    prezzo_totale: parseInt(document.getElementById('totale').innerText),
+                    stato: "DA VERIFICARE (" + metodo + ")"
+                })
+            });
+
+            if(metodo === 'PAYPAL') {
+                window.open(`https://www.paypal.com/paypalme/${window.paypalUser}/${document.getElementById('totale').innerText}EUR`, '_blank');
+            } else { 
+                apriOverlay('ibanOverlay'); 
+            }
+
+        } catch(e){ 
+            alert("Errore nel collegamento al database. Riprova."); 
+        } finally {
+            btnOriginale.innerText = testoOriginale;
+            btnOriginale.disabled = false;
+        }
+    }
+    inizializza();
+</script>
+</body>
+</html>

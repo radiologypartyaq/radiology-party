@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>GESTIONE RADIOLOGY PARTY</title>
+    <style>
+        :root { --accent: #00d4ff; --dark: #1a1a2e; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--dark); color: white; padding: 20px; }
+        #login-overlay { position: fixed; inset: 0; background: var(--dark); z-index: 999; display: flex; align-items: center; justify-content: center; }
+        .login-box { background: #16213e; padding: 40px; border-radius: 15px; border: 1px solid var(--accent); text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #0f3460; background: var(--dark); color: white; box-sizing: border-box; }
+        .btn { cursor: pointer; border: none; border-radius: 8px; font-weight: bold; padding: 12px; transition: 0.3s; }
+        .btn-accent { background: var(--accent); color: #1a1a2e; width: 100%; }
+        .card { display: none; background: #16213e; padding: 25px; border-radius: 15px; border: 1px solid var(--accent); max-width: 1100px; margin: auto; }
+        .actions { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
+        .btn-word { background: #2b5797; color: white; padding: 10px 15px; }
+        .btn-refresh { background: var(--accent); color: #1a1a2e; padding: 10px 15px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; border-bottom: 1px solid #0f3460; text-align: left; }
+        th { color: var(--accent); }
+        .btn-pay { background: #ff9800; color: white; padding: 6px 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2 style="color: var(--accent);">ADMIN LOGIN ☢️</h2>
+            <input type="password" id="adm-pass" placeholder="Password Segreta">
+            <button class="btn btn-accent" onclick="faiLogin()">ENTRA</button>
+        </div>
+    </div>
+
+    <div class="card" id="admin-panel">
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="color: var(--accent); margin:0;">Gestione Iscritti</h2>
+            <button class="btn" style="background:#e74c3c; color:white;" onclick="logout()">LOGOUT</button>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-word" onclick="scaricaWord('tutti')">📝 WORD: LISTA INGRESSO</button>
+            <button class="btn btn-word" style="background:#8e44ad" onclick="scaricaWord('navetta')">🚌 WORD: LISTA NAVETTA</button>
+            <button class="btn btn-refresh" onclick="caricaDati()">🔄 AGGIORNA</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Partecipante</th>
+                    <th>Navetta</th>
+                    <th>Quota</th>
+                    <th>Stato</th>
+                </tr>
+            </thead>
+            <tbody id="corpo-tabella"></tbody>
+        </table>
+    </div>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxCWV5e0YD7a8G33LVmCSl-E33yMkwAK7f3aYYkadxA3QyySX31HdB3H0O96tI3Ytw0/exec"; // <--- METTI IL TUO URL QUI
+    let datiGlobal = [];
+
+    async function faiLogin() {
+        const pass = document.getElementById('adm-pass').value;
+        try {
+            const resp = await fetch(`${SCRIPT_URL}?action=getIscritti&pwd=${encodeURIComponent(pass)}`);
+            const testo = await resp.text();
+            if (testo === "ERRORE_AUTH") { 
+                alert("Password errata!"); 
+            } else {
+                sessionStorage.setItem('rad_key', pass);
+                datiGlobal = JSON.parse(testo);
+                mostraDashboard();
+            }
+        } catch (e) { alert("Errore connessione."); }
+    }
+
+    function mostraDashboard() {
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('admin-panel').style.display = 'block';
+        popolaTabella(datiGlobal);
+    }
+
+    async function caricaDati() {
+        const pass = sessionStorage.getItem('rad_key');
+        const resp = await fetch(`${SCRIPT_URL}?action=getIscritti&pwd=${encodeURIComponent(pass)}`);
+        datiGlobal = await resp.json();
+        popolaTabella(datiGlobal);
+    }
+
+    function popolaTabella(iscritti) {
+        const corpo = document.getElementById('corpo-tabella');
+        corpo.innerHTML = '';
+        iscritti.reverse().forEach(res => {
+            const tr = document.createElement('tr');
+            const pagato = res.stato.includes("PAGATO");
+            tr.innerHTML = `
+                <td><b>${res.nome}</b><br><small>${res.email}</small></td>
+                <td>${res.navetta ? 'SÌ 🚌' : 'No'}</td>
+                <td>${res.prezzo}€</td>
+                <td>${pagato ? '<span style="color:#2ecc71">PAGATO ✅</span>' : `<button class="btn btn-pay" onclick="conferma('${res.nome}','${res.email}')">CONFERMA</button>`}</td>
+            `;
+            corpo.appendChild(tr);
+        });
+    }
+
+    async function conferma(nome, email) {
+        if(!confirm(`Confermi pagamento per ${nome}?`)) return;
+        await fetch(SCRIPT_URL, { method: "POST", mode: 'no-cors', body: JSON.stringify({ action: "confermaPagamento", nome: nome, email: email }) });
+        alert("Richiesta inviata! Il foglio si aggiornerà tra un istante.");
+        setTimeout(caricaDati, 1500);
+    }
+
+    function scaricaWord(tipo) {
+        let html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><meta charset='utf-8'><style>table{border-collapse:collapse; width:100%;} th,td{border:1px solid black; padding:5px; font-family:Arial;}</style></head>
+        <body><h2 style='text-align:center'>${tipo==='tutti'?'LISTA INGRESSO':'LISTA NAVETTA'}</h2><table>
+        <tr><th>NOME</th><th>NAVETTA</th><th>PAGATO</th><th>FIRMA</th></tr>`;
+        
+        const lista = tipo === 'navetta' ? datiGlobal.filter(d => d.navetta) : datiGlobal;
+        lista.forEach(r => {
+            html += `<tr><td>${r.nome.toUpperCase()}</td><td>${r.navetta?'SI':'NO'}</td><td>${r.stato.includes("PAGATO")?'SI':'NO'}</td><td>_______</td></tr>`;
+        });
+        html += "</table></body></html>";
+
+        const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `Radiology_${tipo}.doc`;
+        link.click();
+    }
+
+    function logout() { sessionStorage.clear(); location.reload(); }
+</script>
+</body>
+</html>
