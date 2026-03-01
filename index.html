@@ -204,10 +204,21 @@
     async function inizializza() {
         try {
             const response = await fetch(SCRIPT_URL);
+            
+            // Se la risposta non è OK (es. errore server o script spento)
+            if (!response.ok) throw new Error("Errore server");
+            
             const ev = await response.json();
-            if (!ev.titolo || ev.titolo === "") throw new Error("Evento vuoto");
 
+            // RECOVERY MODE ULTRA-SICURO:
+            // Entra in recovery se: l'oggetto è nullo, il titolo manca, è vuoto o è la stringa "undefined"
+            if (!ev || !ev.titolo || ev.titolo.trim() === "" || ev.titolo === "undefined") {
+                throw new Error("Nessun evento attivo");
+            }
+
+            // Se arriviamo qui, l'evento esiste e lo carichiamo
             document.getElementById('titolo').innerText = ev.titolo;
+            
             const locLink = document.getElementById('location-link');
             if(ev.mappa_url && ev.mappa_url.trim() !== "") {
                 let url = ev.mappa_url.trim();
@@ -238,10 +249,16 @@
             startCountdown(ev.data);
             caricaFaq();
             aggiornaTotale();
-        } catch(e){
+
+        } catch(e) {
+            // Se qualcosa va storto o il database è vuoto, mostriamo il box di cortesia
+            console.log("Sistema in Recovery Mode:", e.message);
+            document.getElementById('titolo').innerText = "RADIOLOGY PARTY";
             document.getElementById('form-container').style.display = 'none';
             document.getElementById('countdown').style.display = 'none';
             document.getElementById('no-event-box').style.display = 'block';
+            // Nascondiamo anche le info grid se non c'è l'evento
+            document.querySelector('.info-grid').style.display = 'none';
         }
     }
 
@@ -326,4 +343,5 @@
 </script>
 </body>
 </html>
+
 
