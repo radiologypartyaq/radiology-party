@@ -202,21 +202,20 @@
     }
 
     async function inizializza() {
+        const formBox = document.getElementById('form-container');
+        const countdownBox = document.getElementById('countdown');
+        const recoveryBox = document.getElementById('no-event-box');
+        const infoGrid = document.querySelector('.info-grid');
+
         try {
             const response = await fetch(SCRIPT_URL);
-            
-            // Se la risposta non è OK (es. errore server o script spento)
-            if (!response.ok) throw new Error("Errore server");
-            
             const ev = await response.json();
 
-            // RECOVERY MODE ULTRA-SICURO:
-            // Entra in recovery se: l'oggetto è nullo, il titolo manca, è vuoto o è la stringa "undefined"
-            if (!ev || !ev.titolo || ev.titolo.trim() === "" || ev.titolo === "undefined") {
-                throw new Error("Nessun evento attivo");
+            // RECOVERY MODE BLOCCANTE: se titolo vuoto o corto
+            if (!ev || !ev.titolo || ev.titolo.trim().length < 3) {
+                throw new Error("RECOVERY_ACTIVE");
             }
 
-            // Se arriviamo qui, l'evento esiste e lo carichiamo
             document.getElementById('titolo').innerText = ev.titolo;
             
             const locLink = document.getElementById('location-link');
@@ -224,50 +223,54 @@
                 let url = ev.mappa_url.trim();
                 if (!url.startsWith('http')) url = 'https://' + url;
                 locLink.href = url;
-                locLink.onclick = function() { window.open(url, '_blank'); return false; };
             }
 
             document.getElementById('info-drink').innerText = ev.info_drink || "DA DEFINIRE";
             document.getElementById('info-cibo').innerText = ev.info_cibo || "DA DEFINIRE";
             document.getElementById('info-musica').innerText = ev.info_musica || "DA DEFINIRE";
             document.getElementById('info-pos').innerText = ev.info_pos || "DA DEFINIRE";
-            document.getElementById('iban-beneficiario').innerText = ev.beneficiario || "DA DEFINIRE";
-            document.getElementById('iban-codice').innerText = ev.iban_codice || "DA DEFINIRE";
+            
+            document.getElementById('iban-beneficiario').innerText = ev.beneficiario || "-";
+            document.getElementById('iban-codice').innerText = ev.iban_codice || "-";
             document.getElementById('iban-causale').innerText = "Causale: " + (ev.iban_causale || "Nome e Cognome");
+            
             document.getElementById('org-1').innerText = "👤 " + (ev.org_1 || "Luca Rescigno");
-            document.getElementById('org-2').innerText = "👤 " + (ev.org_2 || "Staff Radiology");
+            document.getElementById('org-2').innerText = "👤 " + (ev.org_2 || "Staff");
             document.getElementById('org-3').innerText = ev.org_3 ? "👤 " + ev.org_3 : "";
 
-            window.basePrice = ev.prezzo_base;
-            window.shuttlePrice = ev.prezzo_navetta;
+            window.basePrice = parseInt(ev.prezzo_base) || 0;
+            window.shuttlePrice = parseInt(ev.prezzo_navetta) || 0;
             window.paypalUser = ev.paypal_user;
 
             if(ev.navetta_disponibile === true || ev.navetta_disponibile === "TRUE"){
                 document.getElementById('shuttle-box').style.display = 'block';
-                document.getElementById('prezzo-shuttle').innerText = ev.prezzo_navetta;
+                document.getElementById('prezzo-shuttle').innerText = window.shuttlePrice;
             }
+            
             startCountdown(ev.data);
             caricaFaq();
             aggiornaTotale();
 
+            formBox.style.display = 'block';
+            countdownBox.style.display = 'flex';
+            infoGrid.style.display = 'grid';
+            recoveryBox.style.display = 'none';
+
         } catch(e) {
-            // Se qualcosa va storto o il database è vuoto, mostriamo il box di cortesia
-            console.log("Sistema in Recovery Mode:", e.message);
             document.getElementById('titolo').innerText = "RADIOLOGY PARTY";
-            document.getElementById('form-container').style.display = 'none';
-            document.getElementById('countdown').style.display = 'none';
-            document.getElementById('no-event-box').style.display = 'block';
-            // Nascondiamo anche le info grid se non c'è l'evento
-            document.querySelector('.info-grid').style.display = 'none';
+            formBox.style.display = 'none';
+            countdownBox.style.display = 'none';
+            infoGrid.style.display = 'none';
+            recoveryBox.style.display = 'block';
         }
     }
 
     function caricaFaq() {
         const faqData = [
-            { q: "Posso portare un amico?", a: "Sì, ma ricordati di registrarlo su questo sito per inserirlo in lista!" },
-            { q: "Posso disdire la prenotazione?", a: "Sì, ricordati di farlo entro le 48 ore prima della festa contattandoci direttamente." },
-            { q: "Come ricevo la conferma del pagamento?", a: "Una volta effettuato il pagamento, lo staff verificherà l'accredito e riceverai una mail di conferma ufficiale (controlla anche lo SPAM)." },
-            { q: "Cosa devo mostrare all'ingresso?", a: "Basterà comunicare il tuo nome e cognome: lo staff verificherà la presenza nella lista dei pagamenti confermati." }
+            { q: "Posso portare un amico?", a: "Sì, ma ricordati di registrarlo su questo sito!" },
+            { q: "Posso disdire?", a: "Sì, entro 48 ore dalla festa contattandoci direttamente." },
+            { q: "Come ricevo la conferma?", a: "Una volta verificato il pagamento, riceverai una mail ufficiale dallo staff." },
+            { q: "Cosa mostro all'ingresso?", a: "Basterà il tuo nome: lo staff ti troverà nella lista pagati." }
         ];
         const container = document.getElementById('faq-list');
         container.innerHTML = "";
@@ -305,7 +308,7 @@
     async function confermaEPaga(metodo) {
         const nomeIn = document.getElementById('nome-collega');
         const emailIn = document.getElementById('email-collega');
-        if(nomeIn.value.trim().length < 5 || !emailIn.value.includes('@')) return alert("Inserisci Nome completo ed Email valida!");
+        if(nomeIn.value.trim().length < 5 || !emailIn.value.includes('@')) return alert("Dati incompleti!");
 
         const btnOriginale = event.target;
         btnOriginale.innerText = "ATTENDI...";
@@ -326,22 +329,20 @@
 
             if(metodo === 'PAYPAL') {
                 const paypalLink = `https://www.paypal.com/paypalme/${window.paypalUser}/${document.getElementById('totale').innerText}EUR`;
-                btnOriginale.innerText = "CLICCA QUI PER PAGARE ORA 💳";
+                btnOriginale.innerText = "CLICCA QUI PER PAGARE 💳";
                 btnOriginale.style.background = "#0070ba";
                 btnOriginale.style.color = "white";
                 btnOriginale.disabled = false;
                 btnOriginale.onclick = function() { window.location.href = paypalLink; };
-                alert("Registrazione completata! Ora clicca sul tasto blu per terminare il pagamento su PayPal.");
+                alert("Registrato! Ora clicca sul tasto blu per pagare su PayPal.");
             } else {
                 apriOverlay('ibanOverlay');
                 btnOriginale.innerText = "Paga con Bonifico";
                 btnOriginale.disabled = false;
             }
-        } catch(e){ alert("Errore nel collegamento. Riprova."); }
+        } catch(e){ alert("Errore connessione."); }
     }
     inizializza();
 </script>
 </body>
 </html>
-
-
