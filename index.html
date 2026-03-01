@@ -207,30 +207,49 @@
         const recoveryBox = document.getElementById('no-event-box');
         const infoGrid = document.querySelector('.info-grid');
 
+        // Reset iniziale: nascondiamo tutto per sicurezza
+        formBox.style.display = 'none';
+        countdownBox.style.display = 'none';
+        infoGrid.style.display = 'none';
+        recoveryBox.style.display = 'none';
+
         try {
-            const response = await fetch(SCRIPT_URL + "?t=" + new Date().getTime()); // Forza aggiornamento dati
+            const response = await fetch(SCRIPT_URL + "?t=" + new Date().getTime());
             const ev = await response.json();
 
-            // --- IL KILL SWITCH ---
-            // Se scrivi RECOVERY nel titolo su Excel, o se lo lasci vuoto, il sito si chiude.
-            if (!ev || !ev.titolo || ev.titolo.toUpperCase() === "RECOVERY" || ev.titolo.trim().length < 3) {
-                throw new Error("RECOVERY_MODE");
+            // --- IL FILTRO SEVERO ---
+            // Se il titolo è "RECOVERY", o vuoto, o meno di 5 lettere: BLOCCA TUTTO
+            if (!ev || !ev.titolo || ev.titolo.toUpperCase() === "RECOVERY" || ev.titolo.trim().length < 5) {
+                throw new Error("RECOVERY_ATTIVO");
             }
 
-            // Caricamento dati (se il titolo è valido)
+            // Se arriviamo qui, il titolo è valido. Carichiamo tutto.
             document.getElementById('titolo').innerText = ev.titolo;
             
-            // ... (qui il resto dei caricamenti rimane uguale) ...
+            // Carica le info
             document.getElementById('info-drink').innerText = ev.info_drink || "DA DEFINIRE";
             document.getElementById('info-cibo').innerText = ev.info_cibo || "DA DEFINIRE";
             document.getElementById('info-musica').innerText = ev.info_musica || "DA DEFINIRE";
             document.getElementById('info-pos').innerText = ev.info_pos || "DA DEFINIRE";
+
+            // Gestione Link Mappa
+            const locLink = document.getElementById('location-link');
+            if(ev.mappa_url && ev.mappa_url.trim() !== "") {
+                let url = ev.mappa_url.trim();
+                if (!url.startsWith('http')) url = 'https://' + url;
+                locLink.href = url;
+            }
+
+            // Bonifico
             document.getElementById('iban-beneficiario').innerText = ev.beneficiario || "-";
             document.getElementById('iban-codice').innerText = ev.iban_codice || "-";
             document.getElementById('iban-causale').innerText = "Causale: " + (ev.iban_causale || "Nome e Cognome");
+            
+            // Organizzatori
             document.getElementById('org-1').innerText = "👤 " + (ev.org_1 || "Luca Rescigno");
             document.getElementById('org-2').innerText = "👤 " + (ev.org_2 || "Staff");
 
+            // Prezzi e Logica
             window.basePrice = parseInt(ev.prezzo_base) || 0;
             window.shuttlePrice = parseInt(ev.prezzo_navetta) || 0;
             window.paypalUser = ev.paypal_user;
@@ -244,14 +263,15 @@
             caricaFaq();
             aggiornaTotale();
 
-            // MOSTRA TUTTO
+            // SOLO SE TUTTO È OK: Mostriamo il sito reale
             formBox.style.display = 'block';
             countdownBox.style.display = 'flex';
             infoGrid.style.display = 'grid';
             recoveryBox.style.display = 'none';
 
         } catch(e) {
-            // FORZA RECOVERY
+            // SE QUALCOSA MANCA O C'È SCRITTO RECOVERY: Mostriamo solo il box giallo
+            console.log("Attivazione Recovery Mode...");
             document.getElementById('titolo').innerText = "RADIOLOGY PARTY";
             formBox.style.display = 'none';
             countdownBox.style.display = 'none';
@@ -340,5 +360,6 @@
 </script>
 </body>
 </html>
+
 
 
