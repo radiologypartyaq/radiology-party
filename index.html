@@ -70,7 +70,6 @@
         .info-item i { display: block; font-size: 1.4rem; margin-bottom: 5px; }
         .info-item p { margin: 0; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; }
 
-        /* Effetto hover per la card Location cliccabile */
         #location-link:hover { background: rgba(0, 212, 255, 0.2) !important; transform: translateY(-3px); }
 
         .card { padding: 30px 20px; width: 100%; max-width: 450px; text-align: center; box-sizing: border-box; margin-bottom: 30px;}
@@ -91,19 +90,8 @@
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
         .overlay-card { padding: 40px 30px; text-align: center; max-width: 400px; width: 100%; }
 
-        .signature {
-            position: fixed; bottom: 10px; right: 15px;
-            font-size: 0.65rem; color: rgba(255,255,255,0.3);
-            letter-spacing: 1px; text-transform: uppercase; z-index: 100;
-        }
+        .signature { position: fixed; bottom: 10px; right: 15px; font-size: 0.65rem; color: rgba(255,255,255,0.3); letter-spacing: 1px; text-transform: uppercase; z-index: 100; }
         .signature span { color: var(--accent); font-weight: bold; opacity: 0.6; }
-
-        @keyframes pulse {
-            0% { opacity: 0.6; }
-            50% { opacity: 1; text-shadow: 0 0 10px var(--accent); }
-            100% { opacity: 0.6; }
-        }
-        #no-event-box strong { animation: pulse 2s infinite; }
     </style>
 </head>
 <body>
@@ -138,12 +126,7 @@
 
     <div id="no-event-box">
         <h2 style="color: var(--gold); margin-top:0;">🕺 RECOVERY MODE: ON</h2>
-        <p style="font-size: 1.1rem; line-height: 1.6;">
-            Ci stiamo ancora riprendendo dall'ultima festa... <br>
-            Ma non per molto! 🧨<br><br>
-            Torna a trovarci tra qualche giorno per scoprire la prossima data e prenotare il tuo posto.<br><br>
-            <strong style="color: var(--accent);">STAY RADIOLOGY! ☢️</strong>
-        </p>
+        <p style="font-size: 1.1rem; line-height: 1.6;">Ci stiamo ancora riprendendo dall'ultima festa... <br>Torna a trovarci tra qualche giorno!<br><br><strong style="color: var(--accent);">STAY RADIOLOGY! ☢️</strong></p>
     </div>
 
     <div class="card" id="form-container">
@@ -153,13 +136,12 @@
             <input type="email" id="email-collega" placeholder="EMAIL">
             <div id="shuttle-box" style="display:none; margin: 15px 0;">
                 <label style="cursor:pointer; font-size: 0.85rem;">
-                    <input type="checkbox" id="shuttle-check" onchange="aggiornaTotale()"> 
-                    NAVETTA A/R (+<span id="prezzo-shuttle"></span>€)
+                    <input type="checkbox" id="shuttle-check" onchange="aggiornaTotale()"> NAVETTA A/R (+<span id="prezzo-shuttle"></span>€)
                 </label>
             </div>
             <p style="font-size: 1.8rem; font-weight: 900; margin: 15px 0;">TOTALE: <span id="totale">0</span>€</p>
-            <button onclick="confermaEPaga('PAYPAL')" class="btn btn-paypal">Paga con PayPal</button>
-            <button onclick="confermaEPaga('IBAN')" class="btn btn-iban">Paga con Bonifico</button>
+            <button onclick="confermaEPaga('PAYPAL')" id="btn-paypal-main" class="btn btn-paypal">Paga con PayPal</button>
+            <button onclick="confermaEPaga('IBAN')" id="btn-iban-main" class="btn btn-iban">Paga con Bonifico</button>
         </div>
     </div>
 
@@ -184,7 +166,7 @@
 <div id="contattiOverlay" class="overlay" onclick="chiudiOverlay('contattiOverlay')">
     <div class="overlay-card" onclick="event.stopPropagation()">
         <h3 style="color: var(--accent); margin-top: 0;">CONTATTACI</h3>
-        <p style="font-size: 0.9rem; margin-bottom: 10px; color: #cbd5e1;">Per info o problemi con il pagamento:</p>
+        <p style="font-size: 0.9rem; margin-bottom: 10px; color: #cbd5e1;">Per info o problemi:</p>
         <div style="margin: 20px 0;">
             <p id="org-1" style="font-weight: bold; margin: 5px 0;"></p>
             <p id="org-2" style="font-weight: bold; margin: 5px 0;"></p>
@@ -223,39 +205,24 @@
         try {
             const response = await fetch(SCRIPT_URL);
             const ev = await response.json();
-            
             if (!ev.titolo || ev.titolo === "") throw new Error("Evento vuoto");
 
             document.getElementById('titolo').innerText = ev.titolo;
-            
-            // --- GESTIONE ROBUSTA LINK MAPPA ---
             const locLink = document.getElementById('location-link');
             if(ev.mappa_url && ev.mappa_url.trim() !== "") {
                 let url = ev.mappa_url.trim();
-                if (!url.startsWith('http')) { url = 'https://' + url; }
-                
+                if (!url.startsWith('http')) url = 'https://' + url;
                 locLink.href = url;
-                locLink.style.cursor = "pointer";
-                // Forza l'apertura pulita in nuova scheda
-                locLink.onclick = function(e) {
-                    window.open(url, '_blank');
-                    return false;
-                };
-            } else {
-                locLink.removeAttribute('href');
-                locLink.style.cursor = "default";
-                locLink.onclick = null;
+                locLink.onclick = function() { window.open(url, '_blank'); return false; };
             }
 
             document.getElementById('info-drink').innerText = ev.info_drink || "DA DEFINIRE";
             document.getElementById('info-cibo').innerText = ev.info_cibo || "DA DEFINIRE";
             document.getElementById('info-musica').innerText = ev.info_musica || "DA DEFINIRE";
             document.getElementById('info-pos').innerText = ev.info_pos || "DA DEFINIRE";
-            
             document.getElementById('iban-beneficiario').innerText = ev.beneficiario || "DA DEFINIRE";
             document.getElementById('iban-codice').innerText = ev.iban_codice || "DA DEFINIRE";
             document.getElementById('iban-causale').innerText = "Causale: " + (ev.iban_causale || "Nome e Cognome");
-
             document.getElementById('org-1').innerText = "👤 " + (ev.org_1 || "Luca Rescigno");
             document.getElementById('org-2').innerText = "👤 " + (ev.org_2 || "Staff Radiology");
             document.getElementById('org-3').innerText = ev.org_3 ? "👤 " + ev.org_3 : "";
@@ -268,35 +235,26 @@
                 document.getElementById('shuttle-box').style.display = 'block';
                 document.getElementById('prezzo-shuttle').innerText = ev.prezzo_navetta;
             }
-            
             startCountdown(ev.data);
             caricaFaq();
             aggiornaTotale();
-        } catch(e){ 
-            console.log("Errore o Recovery Mode attivo.");
+        } catch(e){
             document.getElementById('form-container').style.display = 'none';
             document.getElementById('countdown').style.display = 'none';
             document.getElementById('no-event-box').style.display = 'block';
-            document.getElementById('titolo').innerText = "RADIOLOGY PARTY";
         }
     }
 
     function caricaFaq() {
         const faqData = [
-            { q: "Posso portare un amico?", a: "Sì, ma ricordati di registrarlo su questo sito per inserirlo in lista!" },
-            { q: "Posso disdire la prenotazione?", a: "Sì, ricordati di farlo entro le 48 ore prima della festa contattandoci direttamente." },
-            { q: "Come ricevo la conferma del pagamento?", a: "Una volta effettuato il pagamento, lo staff verificherà l'accredito e riceverai una mail di conferma ufficiale." },
-            { q: "Cosa devo mostrare all'ingresso?", a: "Basterà comunicare il tuo nome e cognome: lo staff verificherà la presenza nella lista dei pagamenti confermati." }
+            { q: "Posso portare un amico?", a: "Sì, ma registralo separatamente!" },
+            { q: "Come ricevo la conferma?", a: "Riceverai una mail ufficiale dopo la verifica dello staff." }
         ];
         const container = document.getElementById('faq-list');
-        container.innerHTML = "";
         faqData.forEach(f => {
             const div = document.createElement('div');
             div.className = 'faq-item';
-            div.onclick = function() {
-                const ans = this.querySelector('.faq-answer');
-                ans.style.display = (ans.style.display === 'block') ? 'none' : 'block';
-            };
+            div.onclick = function() { const ans = this.querySelector('.faq-answer'); ans.style.display = (ans.style.display === 'block') ? 'none' : 'block'; };
             div.innerHTML = `<div class="faq-question"><span>${f.q}</span> <span>+</span></div><div class="faq-answer">${f.a}</div>`;
             container.appendChild(div);
         });
@@ -304,7 +262,7 @@
 
     function startCountdown(d){
         const target = new Date(d.replace(' ','T')).getTime();
-        const interval = setInterval(() => {
+        setInterval(() => {
             const now = new Date().getTime();
             const diff = target - now;
             if(diff > 0){
@@ -312,9 +270,6 @@
                 document.getElementById('hours').innerText = String(Math.floor((diff%86400000)/3600000)).padStart(2,'0');
                 document.getElementById('minutes').innerText = String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
                 document.getElementById('seconds').innerText = String(Math.floor((diff%60000)/1000)).padStart(2,'0');
-            } else {
-                clearInterval(interval);
-                document.getElementById('countdown').style.display = 'none';
             }
         }, 1000);
     }
@@ -330,27 +285,15 @@
     async function confermaEPaga(metodo) {
         const nomeIn = document.getElementById('nome-collega');
         const emailIn = document.getElementById('email-collega');
-        
-        nomeIn.classList.remove('error');
-        emailIn.classList.remove('error');
-
-        let valid = true;
-        if(nomeIn.value.trim().length < 5) { nomeIn.classList.add('error'); valid = false; }
-        if(!emailIn.value.includes('@')) { emailIn.classList.add('error'); valid = false; }
-
-        if(!valid) {
-            return alert("Inserisci Nome completo ed Email valida prima di vedere le coordinate!");
-        }
+        if(nomeIn.value.trim().length < 5 || !emailIn.value.includes('@')) return alert("Dati incompleti!");
 
         const btnOriginale = event.target;
-        const testoOriginale = btnOriginale.innerText;
-        btnOriginale.innerText = "REGISTRAZIONE...";
+        btnOriginale.innerText = "ATTENDI...";
         btnOriginale.disabled = true;
 
         try {
             await fetch(SCRIPT_URL, {
-                method: "POST",
-                mode: 'no-cors',
+                method: "POST", mode: 'no-cors',
                 body: JSON.stringify({
                     action: "nuovaIscrizione",
                     nome: nomeIn.value.trim().toUpperCase(),
@@ -362,17 +305,19 @@
             });
 
             if(metodo === 'PAYPAL') {
-                window.open(`https://www.paypal.com/paypalme/${window.paypalUser}/${document.getElementById('totale').innerText}EUR`, '_blank');
-            } else { 
-                apriOverlay('ibanOverlay'); 
+                const paypalLink = `https://www.paypal.com/paypalme/${window.paypalUser}/${document.getElementById('totale').innerText}EUR`;
+                btnOriginale.innerText = "CLICCA QUI PER PAGARE ORA 💳";
+                btnOriginale.style.background = "#0070ba";
+                btnOriginale.style.color = "white";
+                btnOriginale.disabled = false;
+                btnOriginale.onclick = function() { window.location.href = paypalLink; };
+                alert("Registrato! Ora clicca sul tasto blu per pagare.");
+            } else {
+                apriOverlay('ibanOverlay');
+                btnOriginale.innerText = "Paga con Bonifico";
+                btnOriginale.disabled = false;
             }
-
-        } catch(e){ 
-            alert("Errore nel collegamento al database. Riprova."); 
-        } finally {
-            btnOriginale.innerText = testoOriginale;
-            btnOriginale.disabled = false;
-        }
+        } catch(e){ alert("Errore connessione."); }
     }
     inizializza();
 </script>
