@@ -202,6 +202,7 @@
     }
 
     async function inizializza() {
+        // Prendiamo tutti i pezzi del sito
         const formBox = document.getElementById('form-container');
         const countdownBox = document.getElementById('countdown');
         const recoveryBox = document.getElementById('no-event-box');
@@ -211,13 +212,17 @@
             const response = await fetch(SCRIPT_URL);
             const ev = await response.json();
 
-            // RECOVERY MODE BLOCCANTE: se titolo vuoto o corto
-            if (!ev || !ev.titolo || ev.titolo.trim().length < 3) {
-                throw new Error("RECOVERY_ACTIVE");
+            // --- IL FILTRO ANTI-ERRORE ---
+            // Se il titolo è vuoto, o troppo corto (es. "ABC"), o non esiste: VAI IN RECOVERY
+            if (!ev || !ev.titolo || ev.titolo.trim().length < 5) {
+                console.log("Titolo non valido o vuoto. Attivo Recovery.");
+                throw new Error("RECOVERY"); 
             }
 
+            // SE IL TITOLO È VALIDO, CARICA TUTTO
             document.getElementById('titolo').innerText = ev.titolo;
             
+            // Mappa e Info
             const locLink = document.getElementById('location-link');
             if(ev.mappa_url && ev.mappa_url.trim() !== "") {
                 let url = ev.mappa_url.trim();
@@ -230,14 +235,15 @@
             document.getElementById('info-musica').innerText = ev.info_musica || "DA DEFINIRE";
             document.getElementById('info-pos').innerText = ev.info_pos || "DA DEFINIRE";
             
+            // Bonifico e Contatti
             document.getElementById('iban-beneficiario').innerText = ev.beneficiario || "-";
             document.getElementById('iban-codice').innerText = ev.iban_codice || "-";
             document.getElementById('iban-causale').innerText = "Causale: " + (ev.iban_causale || "Nome e Cognome");
-            
             document.getElementById('org-1').innerText = "👤 " + (ev.org_1 || "Luca Rescigno");
             document.getElementById('org-2').innerText = "👤 " + (ev.org_2 || "Staff");
             document.getElementById('org-3').innerText = ev.org_3 ? "👤 " + ev.org_3 : "";
 
+            // Prezzi
             window.basePrice = parseInt(ev.prezzo_base) || 0;
             window.shuttlePrice = parseInt(ev.prezzo_navetta) || 0;
             window.paypalUser = ev.paypal_user;
@@ -251,12 +257,14 @@
             caricaFaq();
             aggiornaTotale();
 
+            // MOSTRA TUTTO
             formBox.style.display = 'block';
             countdownBox.style.display = 'flex';
             infoGrid.style.display = 'grid';
             recoveryBox.style.display = 'none';
 
         } catch(e) {
+            // SE IL TITOLO ERA VUOTO O C'È STATO UN ERRORE, MOSTRA IL RECOVERY
             document.getElementById('titolo').innerText = "RADIOLOGY PARTY";
             formBox.style.display = 'none';
             countdownBox.style.display = 'none';
@@ -264,7 +272,6 @@
             recoveryBox.style.display = 'block';
         }
     }
-
     function caricaFaq() {
         const faqData = [
             { q: "Posso portare un amico?", a: "Sì, ma ricordati di registrarlo su questo sito!" },
@@ -346,3 +353,4 @@
 </script>
 </body>
 </html>
+
