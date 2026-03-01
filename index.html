@@ -90,7 +90,6 @@
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
         .overlay-card { padding: 40px 30px; text-align: center; max-width: 400px; width: 100%; }
 
-        /* Signature aggiornata con link */
         .signature { position: fixed; bottom: 10px; right: 15px; font-size: 0.65rem; color: rgba(255,255,255,0.3); letter-spacing: 1px; text-transform: uppercase; z-index: 100; }
         .signature a { color: var(--accent); font-weight: bold; opacity: 0.6; text-decoration: none; transition: 0.3s; }
         .signature a:hover { opacity: 1; text-shadow: 0 0 10px var(--accent); }
@@ -168,7 +167,6 @@
 <div id="contattiOverlay" class="overlay" onclick="chiudiOverlay('contattiOverlay')">
     <div class="overlay-card" onclick="event.stopPropagation()">
         <h3 style="color: var(--accent); margin-top: 0;">CONTATTACI</h3>
-        <p style="font-size: 0.9rem; margin-bottom: 10px; color: #cbd5e1;">Per info o problemi:</p>
         <div style="margin: 20px 0;">
             <p id="org-1" style="font-weight: bold; margin: 5px 0;"></p>
             <p id="org-2" style="font-weight: bold; margin: 5px 0;"></p>
@@ -249,10 +247,13 @@
 
     function caricaFaq() {
         const faqData = [
-            { q: "Posso portare un amico?", a: "Sì, ma registralo separatamente!" },
-            { q: "Come ricevo la conferma?", a: "Riceverai una mail ufficiale dopo la verifica dello staff." }
+            { q: "Posso portare un amico?", a: "Sì, ma ricordati di registrarlo su questo sito per inserirlo in lista!" },
+            { q: "Posso disdire la prenotazione?", a: "Sì, ricordati di farlo entro le 48 ore prima della festa contattandoci direttamente." },
+            { q: "Come ricevo la conferma del pagamento?", a: "Una volta effettuato il pagamento, lo staff verificherà l'accredito e riceverai una mail di conferma ufficiale." },
+            { q: "Cosa devo mostrare all'ingresso?", a: "Basterà comunicare il tuo nome e cognome: lo staff verificherà la presenza nella lista dei pagamenti confermati." }
         ];
         const container = document.getElementById('faq-list');
+        container.innerHTML = "";
         faqData.forEach(f => {
             const div = document.createElement('div');
             div.className = 'faq-item';
@@ -287,7 +288,7 @@
     async function confermaEPaga(metodo) {
         const nomeIn = document.getElementById('nome-collega');
         const emailIn = document.getElementById('email-collega');
-        if(nomeIn.value.trim().length < 5 || !emailIn.value.includes('@')) return alert("Dati incompleti!");
+        if(nomeIn.value.trim().length < 5 || !emailIn.value.includes('@')) return alert("Inserisci Nome completo ed Email valida!");
 
         const btnOriginale = event.target;
         btnOriginale.innerText = "ATTENDI...";
@@ -313,13 +314,13 @@
                 btnOriginale.style.color = "white";
                 btnOriginale.disabled = false;
                 btnOriginale.onclick = function() { window.location.href = paypalLink; };
-                alert("Registrato! Ora clicca sul tasto blu per pagare.");
+                alert("Registrazione completata! Ora clicca sul tasto blu per terminare il pagamento su PayPal.");
             } else {
                 apriOverlay('ibanOverlay');
                 btnOriginale.innerText = "Paga con Bonifico";
                 btnOriginale.disabled = false;
             }
-        } catch(e){ alert("Errore connessione."); }
+        } catch(e){ alert("Errore nel collegamento. Riprova."); }
     }
     inizializza();
 </script>
