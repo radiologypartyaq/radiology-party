@@ -477,5 +477,15 @@
     }
     inizializza();
 </script>
+<div id="cancellaOverlay" class="overlay" onclick="chiudiOverlay('cancellaOverlay')">
+    <div class="overlay-card" onclick="event.stopPropagation()">
+        <h3 style="color: #ef4444; margin-top: 0;">DISDETTA PRENOTAZIONE</h3>
+        <p style="font-size: 0.8rem; color: #cbd5e1; margin-bottom:15px;">Inserisci la tua email e il codice personale ricevuto via mail per disdire il posto.</p>
+        <input type="email" id="canc-email" placeholder="LA TUA EMAIL">
+        <input type="text" id="canc-codice" placeholder="CODICE DI CANCELLAZIONE (es. X7A2P)" style="text-transform: uppercase;">
+        <button onclick="cancellaPrenotazioneCena()" class="btn" style="background: #ef4444; color: white; margin-top: 15px;">CANCELLA PRENOTAZIONE</button>
+        <button onclick="chiudiOverlay('cancellaOverlay')" class="btn" style="background: transparent; color: #94a3b8; margin-top: 10px; font-size: 0.8rem;">ANNULLA</button>
+    </div>
+</div>
 </body>
 </html>
