@@ -278,23 +278,31 @@
             startCountdown(ev.data);
             caricaFaq();
 
-            // --- GESTIONE CENA VS FESTA ---
+            // --- SELEZIONE MODALITÀ: CENA VS FESTA ---
             const tipo = (ev.tipo_evento || "FESTA").toUpperCase().trim();
 
             if (tipo === "CENA") {
-                // MODALITÀ CENA: Nasconde i bottoni di pagamento e mostra solo l'avviso
                 formBox.innerHTML = `
-                    <h3 style="margin-top:0; color: var(--gold);">🍽️ CENA SOCIALE</h3>
-                    <p style="font-size: 1.1rem; margin: 15px 0; line-height: 1.5;">
-                        Quota di partecipazione: <strong style="color: var(--accent); font-size: 1.4rem;">${window.basePrice}€</strong>
+                    <h3 style="margin-top:0; color: var(--gold);">🍽️ CENA SOCIALE - PRENOTAZIONE</h3>
+                    <p style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 15px;">
+                        Quota indicativa: <strong style="color: var(--accent);">${window.basePrice}€</strong> (da pagare al locale).
                     </p>
-                    <p style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.4;">
-                        Non serve pagare in anticipo! Il saldo avverrà direttamente al locale la sera dell'evento.<br>
-                        Ci vediamo lì! 🍷
-                    </p>
+                    <input type="text" id="nome-collega" placeholder="NOME E COGNOME">
+                    <input type="email" id="email-collega" placeholder="EMAIL">
+                    <select id="anno-corso" style="width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(15, 23, 42, 0.9); color: white; text-align-last: center;">
+                        <option value="">-- SELEZIONA ANNO / RUOLO --</option>
+                        <option value="1° Anno TRIENNALE">1° Anno Triennale</option>
+                        <option value="2° Anno TRIENNALE">2° Anno Triennale</option>
+                        <option value="3° Anno TRIENNALE">3° Anno Triennale</option>
+                        <option value="Magistrale">Laurea Magistrale</option>
+                        <option value="Specializzando">Specializzando Radiologo</option>
+                        <option value="Docente / Tutor / Neolaureato">Docente / Tutor / Neolaureato</option>
+                    </select>
+                    <button onclick="prenotaCena()" class="btn" style="background: #2dd4bf; color: #000; margin-top: 10px;">PRENOTA IL POSTO 📋</button>
+                    <button onclick="apriOverlay('cancellaOverlay')" style="background:none; border:none; color:#ef4444; font-size:0.75rem; cursor:pointer; margin-top:15px; text-decoration:underline;">Vuoi cancellare la tua prenotazione?</button>
                 `;
             } else {
-                // MODALITÀ FESTA (Solita)
+                // MODALITÀ FESTA
                 if(ev.navetta_disponibile === true || ev.navetta_disponibile === "TRUE"){
                     document.getElementById('shuttle-box').style.display = 'block';
                     document.getElementById('prezzo-shuttle').innerText = window.shuttlePrice;
@@ -314,6 +322,79 @@
             countdownBox.style.display = 'none';
             infoGrid.style.display = 'none';
             recoveryBox.style.display = 'block';
+        }
+    }
+
+    // --- FUNZIONI PRENOTAZIONE E CANCELLAZIONE CENA ---
+    async function prenotaCena() {
+        const nome = document.getElementById('nome-collega').value.trim();
+        const email = document.getElementById('email-collega').value.trim();
+        const anno = document.getElementById('anno-corso').value;
+
+        if(nome.length < 5 || !email.includes('@') || !anno) {
+            return alert("Compila tutti i campi (Nome, Email e Anno di corso)!");
+        }
+
+        const btn = event.target;
+        btn.innerText = "INVIO IN CORSO...";
+        btn.disabled = true;
+
+        try {
+            await fetch(SCRIPT_URL, {
+                method: "POST", mode: 'no-cors',
+                body: JSON.stringify({
+                    action: "iscrizioneCena",
+                    nome: nome.toUpperCase(),
+                    email: email,
+                    anno: anno,
+                    prezzo_totale: window.basePrice || 0
+                })
+            });
+
+            alert("Prenotazione inviata! Ti abbiamo mandato una mail con il tuo CODICE PERSONALE per eventuale disdetta.");
+            location.reload();
+        } catch(e) {
+            alert("Errore di connessione. Riprova!");
+            btn.innerText = "PRENOTA IL POSTO 📋";
+            btn.disabled = false;
+        }
+    }
+
+    async function cancellaPrenotazioneCena() {
+        const email = document.getElementById('canc-email').value.trim();
+        const codice = document.getElementById('canc-codice').value.trim();
+
+        if(!email.includes('@') || codice.length < 4) {
+            return alert("Inserisci l'email e il codice completo ricevuto via mail!");
+        }
+
+        const btn = event.target;
+        btn.innerText = "VERIFICA IN CORSO...";
+        btn.disabled = true;
+
+        try {
+            const resp = await fetch(SCRIPT_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "cancellaCena",
+                    email: email,
+                    codice: codice
+                })
+            });
+            const testo = await resp.text();
+
+            if (testo === "CANCELLATO") {
+                alert("La tua prenotazione è stata cancellata con successo.");
+                location.reload();
+            } else {
+                alert("Email o Codice non validi. Controlla la mail ricevuta.");
+                btn.innerText = "CANCELLA PRENOTAZIONE";
+                btn.disabled = false;
+            }
+        } catch(e) {
+            alert("Errore durante la disdetta.");
+            btn.innerText = "CANCELLA PRENOTAZIONE";
+            btn.disabled = false;
         }
     }
 
