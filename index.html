@@ -275,14 +275,32 @@
             window.shuttlePrice = parseInt(ev.prezzo_navetta) || 0;
             window.paypalUser = ev.paypal_user;
 
-            if(ev.navetta_disponibile === true || ev.navetta_disponibile === "TRUE"){
-                document.getElementById('shuttle-box').style.display = 'block';
-                document.getElementById('prezzo-shuttle').innerText = window.shuttlePrice;
-            }
-            
             startCountdown(ev.data);
             caricaFaq();
-            aggiornaTotale();
+
+            // --- GESTIONE CENA VS FESTA ---
+            const tipo = (ev.tipo_evento || "FESTA").toUpperCase().trim();
+
+            if (tipo === "CENA") {
+                // MODALITÀ CENA: Nasconde i bottoni di pagamento e mostra solo l'avviso
+                formBox.innerHTML = `
+                    <h3 style="margin-top:0; color: var(--gold);">🍽️ CENA SOCIALE</h3>
+                    <p style="font-size: 1.1rem; margin: 15px 0; line-height: 1.5;">
+                        Quota di partecipazione: <strong style="color: var(--accent); font-size: 1.4rem;">${window.basePrice}€</strong>
+                    </p>
+                    <p style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.4;">
+                        Non serve pagare in anticipo! Il saldo avverrà direttamente al locale la sera dell'evento.<br>
+                        Ci vediamo lì! 🍷
+                    </p>
+                `;
+            } else {
+                // MODALITÀ FESTA (Solita)
+                if(ev.navetta_disponibile === true || ev.navetta_disponibile === "TRUE"){
+                    document.getElementById('shuttle-box').style.display = 'block';
+                    document.getElementById('prezzo-shuttle').innerText = window.shuttlePrice;
+                }
+                aggiornaTotale();
+            }
 
             formBox.style.display = 'block';
             countdownBox.style.display = 'flex';
